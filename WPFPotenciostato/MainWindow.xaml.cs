@@ -47,17 +47,81 @@ namespace WPFPotenciostato
         private TextBox LSV_FinalVoltageText;
         private TextBox LSV_FinalVoltage;
         private Button LSV_SendParameters;
+
+        private StackPanel CV_VerticalPanel1;
+        private StackPanel CV_VerticalPanel2;
+        private StackPanel CV_innerStackPanelTimeStep;
+        private StackPanel CV_innerStackPanelVoltageStep;
+        private StackPanel CV_innerStackPanelInitialVoltage;
+        private StackPanel CV_innerStackPanelFinalVoltage;
+        private StackPanel CV_innerStackPanelPeakVoltage;
+        private StackPanel CV_innerStackPanelCycles;
+        private TextBox CV_TimeStep;
+        private TextBox CV_VoltageStep;
+        private TextBox CV_InitialVoltage;
+        private TextBox CV_FinalVoltage;
+        private TextBox CV_PeakVoltage;
+        private TextBox CV_Cycles;
+        private TextBox CV_TimeStepText;
+        private TextBox CV_VoltageStepText;
+        private TextBox CV_InitialVoltageText;
+        private TextBox CV_FinalVoltageText;
+        private TextBox CV_PeakVoltageText;
+        private TextBox CV_CyclesText;
+        private Button CV_SendParameters;
+
+        private StackPanel DPV_VerticalPanel1;
+        private StackPanel DPV_VerticalPanel2;
+        private StackPanel DPV_innerStackPanelPulseTime;
+        private StackPanel DPV_innerStackPanelVoltageStep;
+        private StackPanel DPV_innerStackPanelInitialVoltage;
+        private StackPanel DPV_innerStackPanelFinalVoltage;
+        private StackPanel DPV_innerStackPanelPulseVoltage;
+        private StackPanel DPV_innerStackPanelLowTime;
+        private TextBox DPV_PulseTime;
+        private TextBox DPV_VoltageStep;
+        private TextBox DPV_InitialVoltage;
+        private TextBox DPV_FinalVoltage;
+        private TextBox DPV_PulseVoltage;
+        private TextBox DPV_LowTime;
+        private TextBox DPV_PulseTimeText;
+        private TextBox DPV_VoltageStepText;
+        private TextBox DPV_InitialVoltageText;
+        private TextBox DPV_FinalVoltageText;
+        private TextBox DPV_PulseVoltageText;
+        private TextBox DPV_LowTimeText;
+        private Button DPV_SendParameters;
+
+        private StackPanel NPV_VerticalPanel1;
+        private StackPanel NPV_VerticalPanel2;
+        private StackPanel NPV_innerStackPanelPulseTime;
+        private StackPanel NPV_innerStackPanelVoltageStep;
+        private StackPanel NPV_innerStackPanelInitialVoltage;
+        private StackPanel NPV_innerStackPanelFinalVoltage;
+        private StackPanel NPV_innerStackPanelLowTime;
+        private TextBox NPV_PulseTime;
+        private TextBox NPV_VoltageStep;
+        private TextBox NPV_InitialVoltage;
+        private TextBox NPV_FinalVoltage;
+        private TextBox NPV_LowTime;
+        private TextBox NPV_PulseTimeText;
+        private TextBox NPV_VoltageStepText;
+        private TextBox NPV_InitialVoltageText;
+        private TextBox NPV_FinalVoltageText;
+        private TextBox NPV_LowTimeText;
+        private Button NPV_SendParameters;
         #endregion
 
         bool IsInMeasure = false;
         String VoltagePoints;
         float[] VoltagePointsFloat;
         public SeriesCollection CurrentSeries { get; set; }
+        public SeriesCollection SeriesCollection { get; set; }
         public MainWindow()
         {
             InitializeComponent();
             
-            CurrentSeries = new SeriesCollection // Initialize a empty chart series
+            CurrentSeries = new SeriesCollection
             {
                 new LineSeries
                 {
@@ -116,18 +180,37 @@ namespace WPFPotenciostato
         }
         #endregion
 
-        #region LSV Config Panel
+        #region Linear Sweep Voltammetry Config
         private void LSV_SendMeasureParameters(Object sender, RoutedEventArgs e)
         {
             if (!string.IsNullOrEmpty(LSV_TimeStep.Text) && !string.IsNullOrEmpty(LSV_VoltageStep.Text)
                 && !string.IsNullOrEmpty(LSV_InitialVoltage.Text) && !string.IsNullOrEmpty(LSV_FinalVoltage.Text))
             {
                 MessageBox.Show("Starting measure.");
-                VoltagePointsArrayCalculator(float.Parse(LSV_TimeStep.Text), float.Parse(LSV_InitialVoltage.Text), float.Parse(LSV_FinalVoltage.Text));
+                LSVVoltagePointsArrayCalculator(float.Parse(LSV_TimeStep.Text), float.Parse(LSV_InitialVoltage.Text)
+                    , float.Parse(LSV_FinalVoltage.Text), float.Parse(LSV_TimeStep.Text));
                 IsInMeasure = true;
             }
             else MessageBox.Show("Fill all the parameters to make the measure.", "Error");
         }
+        private void LSVVoltagePointsArrayCalculator(float VoltageStep, float InitialVoltage, float FinalVoltage, float TimeStep)
+        {
+            int PointsNumber = (int)((FinalVoltage - InitialVoltage) / (VoltageStep * 0.001));
+            VoltagePoints = TimeStep.ToString() + "," + InitialVoltage.ToString();
+            double Accumulator = InitialVoltage;
+
+            for (int i = 1; i < PointsNumber; i++)
+            {
+                Accumulator = Accumulator + VoltageStep * 0.001;
+                if (Accumulator > FinalVoltage) VoltagePoints = VoltagePoints + "," + FinalVoltage.ToString();
+                VoltagePoints = VoltagePoints + "," + Accumulator.ToString();
+            }
+            VoltagePoints = VoltagePoints + "," + FinalVoltage.ToString();
+            _serialPort.Write(VoltagePoints);
+
+            VoltagePointsFloat = ConvertStringToFloatArray(VoltagePoints);
+        }
+
         #region LSV Config Panel Design
         private void LSV_CreateConfigPanelItems()
         {
@@ -233,6 +316,588 @@ namespace WPFPotenciostato
         #endregion
         #endregion
 
+        #region Cyclic Voltammetry Config
+        private void CV_SendMeasureParameters(Object sender, RoutedEventArgs e)
+        {
+            if (!string.IsNullOrEmpty(CV_TimeStep.Text) && !string.IsNullOrEmpty(CV_VoltageStep.Text)
+                && !string.IsNullOrEmpty(CV_InitialVoltage.Text) && !string.IsNullOrEmpty(CV_FinalVoltage.Text) &&
+                !string.IsNullOrEmpty(CV_PeakVoltage.Text) && !string.IsNullOrEmpty(CV_Cycles.Text))
+            {
+                MessageBox.Show("Starting measure.");
+                CVVoltagePointsArrayCalculator(float.Parse(CV_TimeStep.Text), float.Parse(CV_InitialVoltage.Text),
+                    float.Parse(CV_FinalVoltage.Text), float.Parse(CV_Cycles.Text), float.Parse(CV_PeakVoltage.Text),
+                    float.Parse(CV_TimeStep.Text));
+                IsInMeasure = true;
+            }
+            else MessageBox.Show("Fill all the parameters to make the measure.", "Error");
+        }
+        private void CVVoltagePointsArrayCalculator(float VoltageStep, float InitialVoltage, float FinalVoltage, 
+            float Cycles, float PeakVoltage, float TimeStep)
+        {
+            VoltageStep = VoltageStep * 0.001f;
+            VoltagePoints = TimeStep.ToString();
+            for (int cycle = 0; cycle < Cycles; cycle++)
+            {
+                for (float v = InitialVoltage; v <= PeakVoltage; v += VoltageStep)
+                {
+                    VoltagePoints = VoltagePoints + "," + v.ToString();
+
+                }
+                for (float v = PeakVoltage; v >= FinalVoltage; v -= VoltageStep)
+                {
+                    VoltagePoints = VoltagePoints + "," + v.ToString();
+                }
+            }
+            VoltagePoints = VoltagePoints + "," + FinalVoltage.ToString();
+            _serialPort.Write(VoltagePoints);
+            VoltagePointsFloat = ConvertStringToFloatArray(VoltagePoints);
+        }
+
+        #region CV Config Panel Design
+        private void CV_CreateConfigPanelItems()
+        {
+            CV_VerticalPanel1 = new StackPanel
+            {
+                Orientation = Orientation.Vertical,
+                Margin = new Thickness(0, 0, 0, 10)
+            };
+            CV_VerticalPanel2 = new StackPanel
+            {
+                Orientation = Orientation.Vertical,
+                Margin = new Thickness(0, 0, 0, 10)
+            };
+            CV_innerStackPanelTimeStep = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(0, 0, 0, 10)
+            };
+            CV_innerStackPanelVoltageStep = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(0, 0, 0, 10)
+            };
+            CV_innerStackPanelInitialVoltage = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(0, 0, 0, 10)
+            };
+            CV_innerStackPanelFinalVoltage = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(0, 0, 0, 10)
+            };
+            CV_innerStackPanelPeakVoltage = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(0, 0, 0, 10)
+            };
+            CV_innerStackPanelCycles = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(0, 0, 0, 10)
+            };
+
+            CV_TimeStepText = new TextBox
+            {
+                Width = 80,
+                Height = 20,
+                Text = "Time Step",
+                BorderThickness = new Thickness(0),
+                IsReadOnly = true
+            };
+            CV_TimeStep = new TextBox
+            {
+                Width = 50,
+                Height = 20
+            };
+            CV_VoltageStepText = new TextBox
+            {
+                Width = 80,
+                Height = 20,
+                Text = "Voltage Step",
+                BorderThickness = new Thickness(0),
+                IsReadOnly = true
+            };
+            CV_VoltageStep = new TextBox
+            {
+                Width = 50,
+                Height = 20
+            };
+            CV_InitialVoltageText = new TextBox
+            {
+                Width = 80,
+                Height = 20,
+                Text = "Initial Voltage",
+                BorderThickness = new Thickness(0),
+                IsReadOnly = true
+            };
+            CV_InitialVoltage = new TextBox
+            {
+                Width = 50,
+                Height = 20
+            };
+            CV_FinalVoltageText = new TextBox
+            {
+                Width = 80,
+                Height = 20,
+                Text = "Final Voltage",
+                BorderThickness = new Thickness(0),
+                IsReadOnly = true
+            };
+            CV_FinalVoltage = new TextBox
+            {
+                Width = 50,
+                Height = 20
+            };
+            CV_PeakVoltageText = new TextBox
+            {
+                Width = 80,
+                Height = 20,
+                Text = "Peak Voltage",
+                BorderThickness = new Thickness(0),
+                IsReadOnly = true
+            };
+            CV_PeakVoltage = new TextBox
+            {
+                Width = 50,
+                Height = 20
+            };
+            CV_CyclesText = new TextBox
+            {
+                Width = 80,
+                Height = 20,
+                Text = "Cycles",
+                BorderThickness = new Thickness(0),
+                IsReadOnly = true
+            };
+            CV_Cycles = new TextBox
+            {
+                Width = 50,
+                Height = 20
+            };
+            CV_SendParameters = new Button
+            {
+                Width = 80,
+                Height = 20,
+                Content = "Start Measure"
+            };
+            CV_SendParameters.Click += CV_SendMeasureParameters;
+        }
+        private void CV_InitializeConfigPanelItems()
+        {
+            configPanel.Children.Add(CV_VerticalPanel1);
+            configPanel.Children.Add(CV_VerticalPanel2);
+
+            CV_VerticalPanel1.Children.Add(CV_innerStackPanelTimeStep);
+            CV_innerStackPanelTimeStep.Children.Add(CV_TimeStepText);
+            CV_innerStackPanelTimeStep.Children.Add(CV_TimeStep);
+
+            CV_VerticalPanel1.Children.Add(CV_innerStackPanelVoltageStep);
+            CV_innerStackPanelVoltageStep.Children.Add(CV_VoltageStepText);
+            CV_innerStackPanelVoltageStep.Children.Add(CV_VoltageStep);
+
+            CV_VerticalPanel1.Children.Add(CV_innerStackPanelInitialVoltage);
+            CV_innerStackPanelInitialVoltage.Children.Add(CV_InitialVoltageText);
+            CV_innerStackPanelInitialVoltage.Children.Add(CV_InitialVoltage);
+
+            CV_VerticalPanel1.Children.Add(CV_innerStackPanelFinalVoltage);
+            CV_innerStackPanelFinalVoltage.Children.Add(CV_FinalVoltageText);
+            CV_innerStackPanelFinalVoltage.Children.Add(CV_FinalVoltage);
+
+            CV_VerticalPanel2.Children.Add(CV_innerStackPanelPeakVoltage);
+            CV_innerStackPanelPeakVoltage.Children.Add(CV_PeakVoltageText);
+            CV_innerStackPanelPeakVoltage.Children.Add(CV_PeakVoltage);
+
+            CV_VerticalPanel2.Children.Add(CV_innerStackPanelCycles);
+            CV_innerStackPanelCycles.Children.Add(CV_CyclesText);
+            CV_innerStackPanelCycles.Children.Add(CV_Cycles);
+
+            Rectangle spacer = new Rectangle { Width = 40 };
+            CV_innerStackPanelFinalVoltage.Children.Add(spacer);
+            CV_VerticalPanel2.Children.Add(CV_SendParameters);
+        }
+        #endregion
+        #endregion
+
+        #region Differential Pulse Voltammetry
+        private void DPV_SendMeasureParameters(Object sender, RoutedEventArgs e)
+        {
+            if (!string.IsNullOrEmpty(DPV_PulseTime.Text) && !string.IsNullOrEmpty(DPV_VoltageStep.Text)
+                && !string.IsNullOrEmpty(DPV_InitialVoltage.Text) && !string.IsNullOrEmpty(DPV_FinalVoltage.Text) &&
+                !string.IsNullOrEmpty(DPV_PulseVoltage.Text) && !string.IsNullOrEmpty(DPV_LowTime.Text))
+            {
+                MessageBox.Show("Starting measure.");
+                DPVVoltagePointsArrayCalculator(float.Parse(DPV_VoltageStep.Text), float.Parse(DPV_InitialVoltage.Text),
+                    float.Parse(DPV_FinalVoltage.Text), float.Parse(DPV_PulseVoltage.Text), float.Parse(DPV_LowTime.Text),
+                    float.Parse(DPV_PulseTime.Text));
+                IsInMeasure = true;
+            }
+            else MessageBox.Show("Fill all the parameters to make the measure.", "Error");
+        }
+        private void DPVVoltagePointsArrayCalculator(float VoltageStep, float InitialVoltage, float FinalVoltage, 
+            float PulseVoltage, float LowTime, float PulseTime)
+        {
+            PulseVoltage = PulseVoltage * 0.001f;
+            VoltageStep = VoltageStep * 0.001f;
+            VoltagePoints = LowTime.ToString() + "," + LowTime.ToString() + "," + InitialVoltage.ToString();
+            float lastVoltage = InitialVoltage;
+
+            while (lastVoltage < FinalVoltage)
+            {
+                lastVoltage = lastVoltage + PulseVoltage;
+                VoltagePoints = VoltagePoints + "," + lastVoltage.ToString();
+                lastVoltage = lastVoltage - VoltageStep;
+                VoltagePoints = VoltagePoints + "," + lastVoltage.ToString();
+            }
+            VoltagePoints = VoltagePoints + "," + FinalVoltage.ToString();
+            _serialPort.Write(VoltagePoints);
+            VoltagePointsFloat = ConvertStringToFloatArray(VoltagePoints);
+        }
+
+        #region DPV Config Panel Design
+        private void DPV_CreateConfigPanelItems()
+        {
+            DPV_VerticalPanel1 = new StackPanel
+            {
+                Orientation = Orientation.Vertical,
+                Margin = new Thickness(0, 0, 0, 10)
+            };
+            DPV_VerticalPanel2 = new StackPanel
+            {
+                Orientation = Orientation.Vertical,
+                Margin = new Thickness(0, 0, 0, 10)
+            };
+            DPV_innerStackPanelPulseTime = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(0, 0, 0, 10)
+            };
+            DPV_innerStackPanelVoltageStep = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(0, 0, 0, 10)
+            };
+            DPV_innerStackPanelInitialVoltage = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(0, 0, 0, 10)
+            };
+            DPV_innerStackPanelFinalVoltage = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(0, 0, 0, 10)
+            };
+            DPV_innerStackPanelPulseVoltage = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(0, 0, 0, 10)
+            };
+            DPV_innerStackPanelLowTime = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(0, 0, 0, 10)
+            };
+
+            DPV_PulseTimeText = new TextBox
+            {
+                Width = 80,
+                Height = 20,
+                Text = "Pulse Time",
+                BorderThickness = new Thickness(0),
+                IsReadOnly = true
+            };
+            DPV_PulseTime = new TextBox
+            {
+                Width = 50,
+                Height = 20
+            };
+            DPV_VoltageStepText = new TextBox
+            {
+                Width = 80,
+                Height = 20,
+                Text = "Voltage Step",
+                BorderThickness = new Thickness(0),
+                IsReadOnly = true
+            };
+            DPV_VoltageStep = new TextBox
+            {
+                Width = 50,
+                Height = 20
+            };
+            DPV_InitialVoltageText = new TextBox
+            {
+                Width = 80,
+                Height = 20,
+                Text = "Initial Voltage",
+                BorderThickness = new Thickness(0),
+                IsReadOnly = true
+            };
+            DPV_InitialVoltage = new TextBox
+            {
+                Width = 50,
+                Height = 20
+            };
+            DPV_FinalVoltageText = new TextBox
+            {
+                Width = 80,
+                Height = 20,
+                Text = "Final Voltage",
+                BorderThickness = new Thickness(0),
+                IsReadOnly = true
+            };
+            DPV_FinalVoltage = new TextBox
+            {
+                Width = 50,
+                Height = 20
+            };
+            DPV_PulseVoltageText = new TextBox
+            {
+                Width = 80,
+                Height = 20,
+                Text = "Pulse Voltage",
+                BorderThickness = new Thickness(0),
+                IsReadOnly = true
+            };
+            DPV_PulseVoltage = new TextBox
+            {
+                Width = 50,
+                Height = 20
+            };
+            DPV_LowTimeText = new TextBox
+            {
+                Width = 80,
+                Height = 20,
+                Text = "Low Time",
+                BorderThickness = new Thickness(0),
+                IsReadOnly = true
+            };
+            DPV_LowTime = new TextBox
+            {
+                Width = 50,
+                Height = 20
+            };
+            DPV_SendParameters = new Button
+            {
+                Width = 80,
+                Height = 20,
+                Content = "Start Measure"
+            };
+            DPV_SendParameters.Click += DPV_SendMeasureParameters;
+        }
+        private void DPV_InitializeConfigPanelItems()
+        {
+            configPanel.Children.Add(DPV_VerticalPanel1);
+            configPanel.Children.Add(DPV_VerticalPanel2);
+
+            DPV_VerticalPanel1.Children.Add(DPV_innerStackPanelPulseTime);
+            DPV_innerStackPanelPulseTime.Children.Add(DPV_PulseTimeText);
+            DPV_innerStackPanelPulseTime.Children.Add(DPV_PulseTime);
+
+            DPV_VerticalPanel1.Children.Add(DPV_innerStackPanelVoltageStep);
+            DPV_innerStackPanelVoltageStep.Children.Add(DPV_VoltageStepText);
+            DPV_innerStackPanelVoltageStep.Children.Add(DPV_VoltageStep);
+
+            DPV_VerticalPanel1.Children.Add(DPV_innerStackPanelInitialVoltage);
+            DPV_innerStackPanelInitialVoltage.Children.Add(DPV_InitialVoltageText);
+            DPV_innerStackPanelInitialVoltage.Children.Add(DPV_InitialVoltage);
+
+            DPV_VerticalPanel1.Children.Add(DPV_innerStackPanelFinalVoltage);
+            DPV_innerStackPanelFinalVoltage.Children.Add(DPV_FinalVoltageText);
+            DPV_innerStackPanelFinalVoltage.Children.Add(DPV_FinalVoltage);
+
+            DPV_VerticalPanel2.Children.Add(DPV_innerStackPanelPulseVoltage);
+            DPV_innerStackPanelPulseVoltage.Children.Add(DPV_PulseVoltageText);
+            DPV_innerStackPanelPulseVoltage.Children.Add(DPV_PulseVoltage);
+
+            DPV_VerticalPanel2.Children.Add(DPV_innerStackPanelLowTime);
+            DPV_innerStackPanelLowTime.Children.Add(DPV_LowTimeText);
+            DPV_innerStackPanelLowTime.Children.Add(DPV_LowTime);
+
+            Rectangle spacer = new Rectangle { Width = 40 };
+            DPV_innerStackPanelFinalVoltage.Children.Add(spacer);
+            DPV_VerticalPanel2.Children.Add(DPV_SendParameters);
+        }
+        #endregion
+        #endregion
+
+        #region Normal Pulse Voltammetry
+        private void NPV_SendMeasureParameters(Object sender, RoutedEventArgs e)
+        {
+            if (!string.IsNullOrEmpty(NPV_PulseTime.Text) && !string.IsNullOrEmpty(NPV_VoltageStep.Text)
+                && !string.IsNullOrEmpty(NPV_InitialVoltage.Text) && !string.IsNullOrEmpty(NPV_FinalVoltage.Text) &&
+                !string.IsNullOrEmpty(NPV_LowTime.Text))
+            {
+                MessageBox.Show("Starting measure.");
+                NPVVoltagePointsArrayCalculator(float.Parse(NPV_VoltageStep.Text), float.Parse(NPV_InitialVoltage.Text),
+                    float.Parse(NPV_FinalVoltage.Text), float.Parse(NPV_LowTime.Text), float.Parse(NPV_PulseTime.Text));
+                IsInMeasure = true;
+            }
+            else MessageBox.Show("Fill all the parameters to make the measure.", "Error");
+        }
+        private void NPVVoltagePointsArrayCalculator(float VoltageStep, float InitialVoltage, float FinalVoltage,
+            float LowTime, float PulseTime)
+        {
+            VoltageStep = VoltageStep * 0.001f;
+            VoltagePoints = LowTime.ToString() + "," + PulseTime.ToString() + "," + InitialVoltage.ToString();
+            float lastVoltage = InitialVoltage;
+
+            while (lastVoltage < FinalVoltage)
+            {
+                lastVoltage = lastVoltage + VoltageStep;
+                if (lastVoltage > FinalVoltage) break;
+                VoltagePoints = VoltagePoints + "," + lastVoltage.ToString();
+                VoltagePoints = VoltagePoints + "," + InitialVoltage.ToString();
+            }
+            VoltagePoints = VoltagePoints + "," + FinalVoltage.ToString();
+            _serialPort.Write(VoltagePoints);
+            VoltagePointsFloat = ConvertStringToFloatArray(VoltagePoints);
+        }
+
+        #region NPV Config Panel Design
+        private void NPV_CreateConfigPanelItems()
+        {
+            NPV_VerticalPanel1 = new StackPanel
+            {
+                Orientation = Orientation.Vertical,
+                Margin = new Thickness(0, 0, 0, 10)
+            };
+            NPV_VerticalPanel2 = new StackPanel
+            {
+                Orientation = Orientation.Vertical,
+                Margin = new Thickness(0, 0, 0, 10)
+            };
+            NPV_innerStackPanelPulseTime = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(0, 0, 0, 10)
+            };
+            NPV_innerStackPanelVoltageStep = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(0, 0, 0, 10)
+            };
+            NPV_innerStackPanelInitialVoltage = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(0, 0, 0, 10)
+            };
+            NPV_innerStackPanelFinalVoltage = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(0, 0, 0, 10)
+            };
+            NPV_innerStackPanelLowTime = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(0, 0, 0, 10)
+            };
+
+            NPV_PulseTimeText = new TextBox
+            {
+                Width = 80,
+                Height = 20,
+                Text = "Pulse Time",
+                BorderThickness = new Thickness(0),
+                IsReadOnly = true
+            };
+            NPV_PulseTime = new TextBox
+            {
+                Width = 50,
+                Height = 20
+            };
+            NPV_VoltageStepText = new TextBox
+            {
+                Width = 80,
+                Height = 20,
+                Text = "Voltage Step",
+                BorderThickness = new Thickness(0),
+                IsReadOnly = true
+            };
+            NPV_VoltageStep = new TextBox
+            {
+                Width = 50,
+                Height = 20
+            };
+            NPV_InitialVoltageText = new TextBox
+            {
+                Width = 80,
+                Height = 20,
+                Text = "Initial Voltage",
+                BorderThickness = new Thickness(0),
+                IsReadOnly = true
+            };
+            NPV_InitialVoltage = new TextBox
+            {
+                Width = 50,
+                Height = 20
+            };
+            NPV_FinalVoltageText = new TextBox
+            {
+                Width = 80,
+                Height = 20,
+                Text = "Final Voltage",
+                BorderThickness = new Thickness(0),
+                IsReadOnly = true
+            };
+            NPV_FinalVoltage = new TextBox
+            {
+                Width = 50,
+                Height = 20
+            };
+            NPV_LowTimeText = new TextBox
+            {
+                Width = 80,
+                Height = 20,
+                Text = "Low Time",
+                BorderThickness = new Thickness(0),
+                IsReadOnly = true
+            };
+            NPV_LowTime = new TextBox
+            {
+                Width = 50,
+                Height = 20
+            };
+            NPV_SendParameters = new Button
+            {
+                Width = 80,
+                Height = 20,
+                Content = "Start Measure"
+            };
+            NPV_SendParameters.Click += NPV_SendMeasureParameters;
+        }
+        private void NPV_InitializeConfigPanelItems()
+        {
+            configPanel.Children.Add(NPV_VerticalPanel1);
+            configPanel.Children.Add(NPV_VerticalPanel2);
+
+            NPV_VerticalPanel1.Children.Add(NPV_innerStackPanelPulseTime);
+            NPV_innerStackPanelPulseTime.Children.Add(NPV_PulseTimeText);
+            NPV_innerStackPanelPulseTime.Children.Add(NPV_PulseTime);
+
+            NPV_VerticalPanel1.Children.Add(NPV_innerStackPanelVoltageStep);
+            NPV_innerStackPanelVoltageStep.Children.Add(NPV_VoltageStepText);
+            NPV_innerStackPanelVoltageStep.Children.Add(NPV_VoltageStep);
+
+            NPV_VerticalPanel1.Children.Add(NPV_innerStackPanelInitialVoltage);
+            NPV_innerStackPanelInitialVoltage.Children.Add(NPV_InitialVoltageText);
+            NPV_innerStackPanelInitialVoltage.Children.Add(NPV_InitialVoltage);
+
+            NPV_VerticalPanel1.Children.Add(NPV_innerStackPanelFinalVoltage);
+            NPV_innerStackPanelFinalVoltage.Children.Add(NPV_FinalVoltageText);
+            NPV_innerStackPanelFinalVoltage.Children.Add(NPV_FinalVoltage);
+
+            NPV_VerticalPanel2.Children.Add(NPV_innerStackPanelLowTime);
+            NPV_innerStackPanelLowTime.Children.Add(NPV_LowTimeText);
+            NPV_innerStackPanelLowTime.Children.Add(NPV_LowTime);
+
+            Rectangle spacer = new Rectangle { Width = 40 };
+            NPV_innerStackPanelFinalVoltage.Children.Add(spacer);
+            NPV_VerticalPanel2.Children.Add(NPV_SendParameters);
+        }
+        #endregion
+        #endregion
+
+        #region General use methods
         private void ConfigSelect_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (ConfigSelect.SelectedItem is ComboBoxItem selectedItem)
@@ -250,17 +915,20 @@ namespace WPFPotenciostato
                     case "Cyclic Voltammetry":
                         CurrentSeries.Clear();
                         configPanel.Children.Clear();
-                        MessageBox.Show("Cyclic Voltammetry");
+                        CV_CreateConfigPanelItems();
+                        CV_InitializeConfigPanelItems();
                         break;
                     case "Differential Pulse Voltammetry":
                         CurrentSeries.Clear();
                         configPanel.Children.Clear();
-                        MessageBox.Show("Differential Pulse Voltammetry");
+                        DPV_CreateConfigPanelItems();
+                        DPV_InitializeConfigPanelItems();
                         break;
                     case "Normal Pulse Voltammetry":
                         CurrentSeries.Clear();
                         configPanel.Children.Clear();
-                        MessageBox.Show("Normal Pulse Voltammetry");
+                        NPV_CreateConfigPanelItems();
+                        NPV_InitializeConfigPanelItems();
                         break;
                     default:
 
@@ -269,23 +937,7 @@ namespace WPFPotenciostato
                 }
             }
         }
-        private void VoltagePointsArrayCalculator(float VoltageStep, float InitialVoltage, float FinalVoltage)
-        {
-            int PointsNumber = (int)((FinalVoltage - InitialVoltage) / (VoltageStep*0.001));
-            VoltagePoints = InitialVoltage.ToString();
-            double Accumulator = InitialVoltage;
-
-            for (int i = 1; i < PointsNumber; i++)
-            {
-                Accumulator = Accumulator + VoltageStep*0.001;
-                if (Accumulator > FinalVoltage) VoltagePoints = VoltagePoints + "," + FinalVoltage.ToString();
-                VoltagePoints = VoltagePoints + "," + Accumulator.ToString();
-            }
-            VoltagePoints = VoltagePoints + "," + FinalVoltage.ToString();
-            _serialPort.Write(VoltagePoints);
-
-            VoltagePointsFloat = ConvertStringToFloatArray(VoltagePoints);
-        }
+        
         private void CurrentPointsPlotter(object sender, SerialDataReceivedEventArgs e)
         {
             if (IsInMeasure)
@@ -330,5 +982,6 @@ namespace WPFPotenciostato
 
             return floatArray;
         }
+        #endregion
     }
 }
