@@ -19,6 +19,8 @@ using LiveCharts;
 using LiveCharts.Wpf;
 using LiveCharts.Definitions.Charts;
 using LiveCharts.Defaults;
+using System.IO;
+using LiveCharts.Wpf.Charts.Base;
 
 namespace WPFPotenciostato
 {
@@ -116,11 +118,16 @@ namespace WPFPotenciostato
         String VoltagePoints;
         float[] VoltagePointsFloat;
         public SeriesCollection CurrentSeries { get; set; }
-        public SeriesCollection SeriesCollection { get; set; }
         public MainWindow()
         {
             InitializeComponent();
-            
+
+            string[] ports = SerialPort.GetPortNames();
+
+            for (int i = 0; i < ports.Length; i++)
+            {
+                COMselect.Items.Add(ports[i]);
+            }
             CurrentSeries = new SeriesCollection
             {
                 new LineSeries
@@ -130,12 +137,6 @@ namespace WPFPotenciostato
                 }
             };
             DataContext = this;
-        }
-
-        private void OpenSecondWindow_Click(object sender, RoutedEventArgs e)
-        {
-            Window1 secondWindow = new Window1();
-            secondWindow.Show();
         }
 
         #region Serial Port
@@ -190,13 +191,14 @@ namespace WPFPotenciostato
                 LSVVoltagePointsArrayCalculator(float.Parse(LSV_TimeStep.Text), float.Parse(LSV_InitialVoltage.Text)
                     , float.Parse(LSV_FinalVoltage.Text), float.Parse(LSV_TimeStep.Text));
                 IsInMeasure = true;
+                _serialPort.Write("0" + LSV_TimeStep.Text + LSV_VoltageStep.Text + LSV_InitialVoltage.Text + LSV_FinalVoltage.Text);
             }
             else MessageBox.Show("Fill all the parameters to make the measure.", "Error");
         }
         private void LSVVoltagePointsArrayCalculator(float VoltageStep, float InitialVoltage, float FinalVoltage, float TimeStep)
         {
             int PointsNumber = (int)((FinalVoltage - InitialVoltage) / (VoltageStep * 0.001));
-            VoltagePoints = TimeStep.ToString() + "," + InitialVoltage.ToString();
+            VoltagePoints = InitialVoltage.ToString();
             double Accumulator = InitialVoltage;
 
             for (int i = 1; i < PointsNumber; i++)
@@ -206,7 +208,7 @@ namespace WPFPotenciostato
                 VoltagePoints = VoltagePoints + "," + Accumulator.ToString();
             }
             VoltagePoints = VoltagePoints + "," + FinalVoltage.ToString();
-            _serialPort.Write(VoltagePoints);
+            //_serialPort.Write(VoltagePoints);
 
             VoltagePointsFloat = ConvertStringToFloatArray(VoltagePoints);
         }
@@ -328,6 +330,8 @@ namespace WPFPotenciostato
                     float.Parse(CV_FinalVoltage.Text), float.Parse(CV_Cycles.Text), float.Parse(CV_PeakVoltage.Text),
                     float.Parse(CV_TimeStep.Text));
                 IsInMeasure = true;
+                _serialPort.Write("1" + CV_TimeStep.Text + CV_VoltageStep.Text + CV_InitialVoltage.Text
+                    + CV_FinalVoltage.Text + CV_PeakVoltage.Text + CV_Cycles.Text);
             }
             else MessageBox.Show("Fill all the parameters to make the measure.", "Error");
         }
@@ -335,7 +339,7 @@ namespace WPFPotenciostato
             float Cycles, float PeakVoltage, float TimeStep)
         {
             VoltageStep = VoltageStep * 0.001f;
-            VoltagePoints = TimeStep.ToString();
+            VoltagePoints = "";
             for (int cycle = 0; cycle < Cycles; cycle++)
             {
                 for (float v = InitialVoltage; v <= PeakVoltage; v += VoltageStep)
@@ -349,7 +353,7 @@ namespace WPFPotenciostato
                 }
             }
             VoltagePoints = VoltagePoints + "," + FinalVoltage.ToString();
-            _serialPort.Write(VoltagePoints);
+            //_serialPort.Write(VoltagePoints);
             VoltagePointsFloat = ConvertStringToFloatArray(VoltagePoints);
         }
 
@@ -531,6 +535,8 @@ namespace WPFPotenciostato
                     float.Parse(DPV_FinalVoltage.Text), float.Parse(DPV_PulseVoltage.Text), float.Parse(DPV_LowTime.Text),
                     float.Parse(DPV_PulseTime.Text));
                 IsInMeasure = true;
+                _serialPort.Write("2" + DPV_PulseTime.Text + DPV_VoltageStep.Text + DPV_InitialVoltage.Text
+                    + DPV_FinalVoltage.Text + DPV_PulseVoltage.Text + DPV_LowTime.Text);
             }
             else MessageBox.Show("Fill all the parameters to make the measure.", "Error");
         }
@@ -539,7 +545,7 @@ namespace WPFPotenciostato
         {
             PulseVoltage = PulseVoltage * 0.001f;
             VoltageStep = VoltageStep * 0.001f;
-            VoltagePoints = LowTime.ToString() + "," + LowTime.ToString() + "," + InitialVoltage.ToString();
+            VoltagePoints = InitialVoltage.ToString();
             float lastVoltage = InitialVoltage;
 
             while (lastVoltage < FinalVoltage)
@@ -731,6 +737,8 @@ namespace WPFPotenciostato
                 NPVVoltagePointsArrayCalculator(float.Parse(NPV_VoltageStep.Text), float.Parse(NPV_InitialVoltage.Text),
                     float.Parse(NPV_FinalVoltage.Text), float.Parse(NPV_LowTime.Text), float.Parse(NPV_PulseTime.Text));
                 IsInMeasure = true;
+                _serialPort.Write("3" + NPV_PulseTime.Text + NPV_VoltageStep.Text + NPV_InitialVoltage.Text
+                    + NPV_FinalVoltage.Text + NPV_LowTime.Text);
             }
             else MessageBox.Show("Fill all the parameters to make the measure.", "Error");
         }
@@ -738,7 +746,7 @@ namespace WPFPotenciostato
             float LowTime, float PulseTime)
         {
             VoltageStep = VoltageStep * 0.001f;
-            VoltagePoints = LowTime.ToString() + "," + PulseTime.ToString() + "," + InitialVoltage.ToString();
+            VoltagePoints = InitialVoltage.ToString();
             float lastVoltage = InitialVoltage;
 
             while (lastVoltage < FinalVoltage)
@@ -749,7 +757,7 @@ namespace WPFPotenciostato
                 VoltagePoints = VoltagePoints + "," + InitialVoltage.ToString();
             }
             VoltagePoints = VoltagePoints + "," + FinalVoltage.ToString();
-            _serialPort.Write(VoltagePoints);
+            //_serialPort.Write(VoltagePoints);
             VoltagePointsFloat = ConvertStringToFloatArray(VoltagePoints);
         }
 
@@ -897,7 +905,7 @@ namespace WPFPotenciostato
         #endregion
         #endregion
 
-        #region General use methods
+        #region General purpose methods / Chart methods
         private void ConfigSelect_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (ConfigSelect.SelectedItem is ComboBoxItem selectedItem)
@@ -942,17 +950,22 @@ namespace WPFPotenciostato
         {
             if (IsInMeasure)
             {
+                /*for(int i = 0; i < VoltagePointsFloat.Length; i++)
+                {
+                    Console.WriteLine(VoltagePointsFloat[i]);
+                }*/
                 Thread.Sleep(1000);
                 string input = _serialPort.ReadExisting();
                 _serialPort.DiscardInBuffer();
+                Console.WriteLine(input);
                 float[] MeasuredCurrent = ConvertStringToFloatArray(input);
-
+                VoltagePointsFloat = VoltagePointsFloat.Skip(2).ToArray();
                 Dispatcher.Invoke(() =>
                 {
                     CurrentSeries.Clear();
                     var ivPoints = new ChartValues<ObservablePoint>();
 
-                    for (int i = 0; i < VoltagePointsFloat.Length; i++)
+                    for (int i = 0; i < MeasuredCurrent.Length; i++)
                     {
                         ivPoints.Add(new ObservablePoint(VoltagePointsFloat[i], MeasuredCurrent[i]));
                     }
@@ -981,6 +994,77 @@ namespace WPFPotenciostato
             }
 
             return floatArray;
+        }
+
+        private void ExportGraphPNG(object sender, RoutedEventArgs e)
+        {
+            string documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+
+            string FolderName = "SMUExport";
+
+            string FolderPath = System.IO.Path.Combine(documentsPath, FolderName);
+
+            if (!Directory.Exists(FolderPath))
+            {
+                Directory.CreateDirectory(FolderPath);
+            }
+            string timestamp = DateTime.Now.ToString("yyyyMMdd-HHmm");
+            string fileName = $"{timestamp}.png";
+            string filePath = System.IO.Path.Combine(FolderPath, fileName);
+
+            SaveChartAsPng(Chart, filePath);
+        }
+        static void SaveChartAsPng(FrameworkElement chart, string filePath)
+        {
+            var encoder = new PngBitmapEncoder();
+            EncodeVisual(chart, encoder);
+
+            using (var stream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None))
+            {
+                encoder.Save(stream);
+            }
+        }
+
+        static void EncodeVisual(FrameworkElement visual, BitmapEncoder encoder)
+        {
+            if (visual == null)
+                throw new ArgumentNullException(nameof(visual));
+
+            var size = new Size(visual.ActualWidth, visual.ActualHeight);
+
+            var container = new Canvas
+            {
+                Width = size.Width,
+                Height = size.Height
+            };
+
+            var parent = VisualTreeHelper.GetParent(visual) as UIElement;
+            var originalParent = parent as Panel;
+            int originalIndex = originalParent != null ? originalParent.Children.IndexOf(visual) : -1;
+
+            if (originalParent != null)
+            {
+                originalParent.Children.Remove(visual);
+            }
+
+            container.Children.Add(visual);
+
+            container.Measure(size);
+            container.Arrange(new Rect(size));
+
+            var renderBitmap = new RenderTargetBitmap(
+                (int)size.Width, (int)size.Height,
+                96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+
+            renderBitmap.Render(container);
+            encoder.Frames.Add(BitmapFrame.Create(renderBitmap));
+
+            container.Children.Remove(visual);
+
+            if (originalParent != null && originalIndex >= 0)
+            {
+                originalParent.Children.Insert(originalIndex, visual);
+            }
         }
         #endregion
     }
