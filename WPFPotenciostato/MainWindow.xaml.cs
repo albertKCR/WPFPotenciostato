@@ -123,6 +123,7 @@ namespace WPFPotenciostato
 
         int VoltageArrayIndexOffset = 0;
         bool NotFirstData = false;
+        float[] MeasuredCurrent;
         public MainWindow()
         {
             InitializeComponent();
@@ -982,7 +983,7 @@ namespace WPFPotenciostato
                 string input = _serialPort.ReadExisting();
                 _serialPort.DiscardInBuffer();
                 _serialPort.DiscardOutBuffer();
-                float[] MeasuredCurrent = ConvertStringToFloatArray(input);
+                MeasuredCurrent = ConvertStringToFloatArray(input);
                 Array.Resize(ref MeasuredCurrent, MeasuredCurrent.Length - 1);
                 Console.WriteLine("len measuredcurretn, votlagePoints");
                 Console.WriteLine(MeasuredCurrent.Length);
@@ -1044,6 +1045,38 @@ namespace WPFPotenciostato
             return floatArray;
         }
 
+        void SaveToCsv(object sender, RoutedEventArgs e)
+        {
+            string documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+
+            string FolderName = "SMUExport";
+
+            string FolderPath = System.IO.Path.Combine(documentsPath, FolderName);
+
+            if (!Directory.Exists(FolderPath))
+            {
+                Directory.CreateDirectory(FolderPath);
+            }
+            
+            string timestamp = DateTime.Now.ToString("yyyyMMdd-HHmm");
+            string fileName = $"{timestamp}.csv";
+            string filePath = System.IO.Path.Combine(FolderPath, fileName);
+
+            StringBuilder csvContent = new StringBuilder();
+            csvContent.AppendLine("current,voltage");
+
+            int rowCount = Math.Min(MeasuredCurrent.Length, VoltagePointsFloat.Length);
+
+            for (int i = 0; i < rowCount; i++)
+            {
+                csvContent.AppendLine($"{MeasuredCurrent[i]},{VoltagePointsFloat[i]}");
+            }
+
+            File.WriteAllText(filePath, csvContent.ToString());
+
+            MessageBox.Show("CSV file created in Documents/SMUExport.");
+        }
+
         private void ExportGraphPNG(object sender, RoutedEventArgs e)
         {
             string documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
@@ -1061,6 +1094,7 @@ namespace WPFPotenciostato
             string filePath = System.IO.Path.Combine(FolderPath, fileName);
 
             SaveChartAsPng(Chart, filePath);
+            MessageBox.Show("PNG file created in Documents/SMUExport.");
         }
 
         static void SaveChartAsPng(FrameworkElement chart, string filePath)
