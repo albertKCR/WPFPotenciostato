@@ -41,6 +41,7 @@ namespace WPFPotenciostato
         private StackPanel LSV_innerStackPanelVoltageStep;
         private StackPanel LSV_innerStackPanelInitialVoltage;
         private StackPanel LSV_innerStackPanelFinalVoltage;
+        private StackPanel LSV_innerStackPanelLogSend;
         private TextBox LSV_TimeStep;
         private TextBox LSV_VoltageStep;
         private TextBox LSV_TimeStepText;
@@ -113,6 +114,9 @@ namespace WPFPotenciostato
         private TextBox NPV_FinalVoltageText;
         private TextBox NPV_LowTimeText;
         private Button NPV_SendParameters;
+
+        private CheckBox CurrentInLog;
+        bool LogIsChecked;
         #endregion
 
         bool IsInMeasure = false;
@@ -253,6 +257,11 @@ namespace WPFPotenciostato
                 Orientation = Orientation.Horizontal,
                 Margin = new Thickness(0, 0, 0, 10)
             };
+            LSV_innerStackPanelLogSend = new StackPanel
+            {
+                Orientation = Orientation.Vertical,
+                Margin = new Thickness(0, 0, 0, 10)
+            };
 
             LSV_TimeStepText = new TextBox
             {
@@ -312,6 +321,13 @@ namespace WPFPotenciostato
                 Height = 20,
                 Content = "Start Measure"
             };
+            CurrentInLog = new CheckBox
+            {
+                Content = "Current in Log",
+                VerticalAlignment = VerticalAlignment.Top,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Margin = new Thickness(0, 0, 0, 0)
+            };
             LSV_SendParameters.Click += LSV_SendMeasureParameters;
         }
         private void LSV_InitializeConfigPanelItems()
@@ -330,7 +346,15 @@ namespace WPFPotenciostato
             LSV_innerStackPanelFinalVoltage.Children.Add(LSV_FinalVoltage);
             Rectangle spacer = new Rectangle { Width = 40 };
             LSV_innerStackPanelFinalVoltage.Children.Add(spacer);
-            LSV_innerStackPanelFinalVoltage.Children.Add(LSV_SendParameters);
+            configPanel.Children.Add(LSV_innerStackPanelLogSend);
+            Rectangle spacer2 = new Rectangle { Height = 20 };
+            LSV_innerStackPanelLogSend.Children.Add(spacer2);
+            LSV_innerStackPanelLogSend.Children.Add(CurrentInLog);
+            Rectangle spacer3 = new Rectangle { Height = 10 };
+            LSV_innerStackPanelLogSend.Children.Add(spacer3);
+            LSV_innerStackPanelLogSend.Children.Add(LSV_SendParameters);
+            CurrentInLog.Checked += CheckBox_Checked;
+            CurrentInLog.Unchecked += CheckBox_Unchecked;
         }
         #endregion
         #endregion
@@ -514,6 +538,13 @@ namespace WPFPotenciostato
                 Height = 20,
                 Content = "Start Measure"
             };
+            CurrentInLog = new CheckBox
+            {
+                Content = "Plot Current in Log",
+                VerticalAlignment = VerticalAlignment.Top,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Margin = new Thickness(0, 0, 0, 0)
+            };
             CV_SendParameters.Click += CV_SendMeasureParameters;
         }
         private void CV_InitializeConfigPanelItems()
@@ -547,7 +578,10 @@ namespace WPFPotenciostato
 
             Rectangle spacer = new Rectangle { Width = 40 };
             CV_innerStackPanelFinalVoltage.Children.Add(spacer);
+            CV_VerticalPanel2.Children.Add(CurrentInLog);
             CV_VerticalPanel2.Children.Add(CV_SendParameters);
+            CurrentInLog.Checked += CheckBox_Checked;
+            CurrentInLog.Unchecked += CheckBox_Unchecked;
         }
         #endregion
         #endregion
@@ -717,6 +751,13 @@ namespace WPFPotenciostato
                 Height = 20,
                 Content = "Start Measure"
             };
+            CurrentInLog = new CheckBox
+            {
+                Content = "Plot Current in Log",
+                VerticalAlignment = VerticalAlignment.Top,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Margin = new Thickness(0, 0, 0, 0)
+            };
             DPV_SendParameters.Click += DPV_SendMeasureParameters;
         }
         private void DPV_InitializeConfigPanelItems()
@@ -750,7 +791,10 @@ namespace WPFPotenciostato
 
             Rectangle spacer = new Rectangle { Width = 40 };
             DPV_innerStackPanelFinalVoltage.Children.Add(spacer);
+            DPV_VerticalPanel2.Children.Add(CurrentInLog);
             DPV_VerticalPanel2.Children.Add(DPV_SendParameters);
+            CurrentInLog.Checked += CheckBox_Checked;
+            CurrentInLog.Unchecked += CheckBox_Unchecked;
         }
         #endregion
         #endregion
@@ -900,6 +944,13 @@ namespace WPFPotenciostato
                 Height = 20,
                 Content = "Start Measure"
             };
+            CurrentInLog = new CheckBox
+            {
+                Content = "Plot Current in Log",
+                VerticalAlignment = VerticalAlignment.Top,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Margin = new Thickness(0, 0, 0, 0)
+            };
             NPV_SendParameters.Click += NPV_SendMeasureParameters;
         }
         private void NPV_InitializeConfigPanelItems()
@@ -929,7 +980,10 @@ namespace WPFPotenciostato
 
             Rectangle spacer = new Rectangle { Width = 40 };
             NPV_innerStackPanelFinalVoltage.Children.Add(spacer);
+            NPV_VerticalPanel2.Children.Add(CurrentInLog);
             NPV_VerticalPanel2.Children.Add(NPV_SendParameters);
+            CurrentInLog.Checked += CheckBox_Checked;
+            CurrentInLog.Unchecked += CheckBox_Unchecked;
         }
         #endregion
         #endregion
@@ -989,7 +1043,7 @@ namespace WPFPotenciostato
                 Console.WriteLine(MeasuredCurrent.Length);
                 Console.WriteLine(VoltagePointsFloat.Length);
 
-                for (int i = 0; i< MeasuredCurrent.Length; i++)
+                /*for (int i = 0; i< MeasuredCurrent.Length; i++)
                 {
                     Console.Write(MeasuredCurrent[i]);
                     Console.Write(",");
@@ -999,7 +1053,7 @@ namespace WPFPotenciostato
                 {
                     Console.Write(VoltagePointsFloat[i]);
                     Console.Write(",");
-                }
+                }*/
 
                 Dispatcher.Invoke(() =>
                 {
@@ -1014,23 +1068,50 @@ namespace WPFPotenciostato
                         };
                     }
 
-                    for (int i = 0; i < MeasuredCurrent.Length - 1; i++)
+                    if (LogIsChecked)
                     {
-                        if (NotFirstData)
+                        for (int i = 0; i < MeasuredCurrent.Length - 1; i++)
                         {
-                            ivSeries.Values.Add(new ObservablePoint(VoltagePointsFloat[VoltageArrayIndexOffset], MeasuredCurrent[i]));
+                            if (NotFirstData)
+                            {
+                                ivSeries.Values.Add(new ObservablePoint(VoltagePointsFloat[VoltageArrayIndexOffset], Math.Log10(MeasuredCurrent[i])));
+                            }
+                            else
+                            {
+                                ivSeries.Values.Add(new ObservablePoint(VoltagePointsFloat[i], Math.Log10(MeasuredCurrent[i])));
+                            }
+                            VoltageArrayIndexOffset++;
                         }
-                        else
+                    }
+                    else
+                    {
+                        for (int i = 0; i < MeasuredCurrent.Length - 1; i++)
                         {
-                            ivSeries.Values.Add(new ObservablePoint(VoltagePointsFloat[i], MeasuredCurrent[i]));
+                            if (NotFirstData)
+                            {
+                                ivSeries.Values.Add(new ObservablePoint(VoltagePointsFloat[VoltageArrayIndexOffset], MeasuredCurrent[i]));
+                            }
+                            else
+                            {
+                                ivSeries.Values.Add(new ObservablePoint(VoltagePointsFloat[i], MeasuredCurrent[i]));
+                            }
+                            VoltageArrayIndexOffset++;
                         }
-                        VoltageArrayIndexOffset++;
                     }
                     CurrentSeries.Add(ivSeries);
                     NotFirstData = true;
                 });
                 Thread.Sleep(1200);
             }
+        }
+
+        private void CheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            LogIsChecked = true;
+        }
+        private void CheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            LogIsChecked = false;
         }
         static float[] ConvertStringToFloatArray(string input)
         {
@@ -1044,7 +1125,7 @@ namespace WPFPotenciostato
 
             return floatArray;
         }
-
+        #region Export CSV
         void SaveToCsv(object sender, RoutedEventArgs e)
         {
             string documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
@@ -1067,16 +1148,27 @@ namespace WPFPotenciostato
 
             int rowCount = Math.Min(MeasuredCurrent.Length, VoltagePointsFloat.Length);
 
-            for (int i = 0; i < rowCount; i++)
+            if (LogIsChecked)
             {
-                csvContent.AppendLine($"{MeasuredCurrent[i]},{VoltagePointsFloat[i]}");
+                for (int i = 0; i < rowCount; i++)
+                {
+                    csvContent.AppendLine($"{Math.Log10(MeasuredCurrent[i])},{VoltagePointsFloat[i]}");
+                }
+            }
+            else
+            {
+                for (int i = 0; i < rowCount; i++)
+                {
+                    csvContent.AppendLine($"{MeasuredCurrent[i]},{VoltagePointsFloat[i]}");
+                }
             }
 
             File.WriteAllText(filePath, csvContent.ToString());
 
             MessageBox.Show("CSV file created in Documents/SMUExport.");
         }
-
+        #endregion
+        #region Export Chart
         private void ExportGraphPNG(object sender, RoutedEventArgs e)
         {
             string documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
@@ -1129,7 +1221,7 @@ namespace WPFPotenciostato
             renderBitmap.Render(drawingVisual);
             encoder.Frames.Add(BitmapFrame.Create(renderBitmap));
         }
-
+        #endregion
         #endregion
     }
 }
