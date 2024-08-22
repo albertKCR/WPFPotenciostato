@@ -10,8 +10,7 @@
         WindowState="Normal"
         ResizeMode="CanMinimize"
         Width="1024"
-        Height="600"
-        >
+        Height="600">
     <Grid ShowGridLines="True">
         <Grid.RowDefinitions>
             <RowDefinition Height="3*"/>
@@ -22,8 +21,7 @@
             <ColumnDefinition Width="2*"/>
         </Grid.ColumnDefinitions>
 
-        <!--<TextBox Name="TextBoxOutput" HorizontalAlignment="Left" Width="54" Margin="482,244,0,89" Grid.Column="1"/>-->
-        <lvc:CartesianChart Name="Chart" Series="{Binding CurrentSeries}"  Grid.Column="1" Hoverable="True" Zoom="Xy">
+        <lvc:CartesianChart Name="Chart" Series="{Binding CurrentSeries}"  Grid.Column="1" Hoverable="True" Zoom="Xy" ZoomingSpeed="1">
             <lvc:CartesianChart.AxisY>
                 <lvc:Axis Title="Current (mA)" ></lvc:Axis>
             </lvc:CartesianChart.AxisY>
@@ -35,7 +33,6 @@
         <Button Content="Connect" Click="Connect_Comms" Name="Connect_btn" FontWeight="Bold" Grid.Row="0" Grid.Column="0" Height="23" Margin="122,182,129,0" VerticalAlignment="Top"/>
         <Button Content="Disconnect" Click="DisconnectSerialPort" Name="Disconnect_btn" FontWeight="Bold" Grid.Row="0" Grid.Column="0" Margin="122,370,127,0" Height="23" VerticalAlignment="Top"/>
         <ComboBox Name="COMselect" Margin="41,26,49,315" Grid.Row="0" Grid.Column="0" Height="23" Width="90" SelectedIndex="0" >
-
         </ComboBox>
 
         <ComboBox Name="Baudselect" Margin="41,83,49,258" Grid.Row="0" Grid.Column="0" Height="23" Width="90" SelectedIndex="0">

@@ -33,6 +33,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_A0D9858E6B594C478F83E982084474D6"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_CAB4D836BDA841A09772DA8A59EE05A7"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -75,7 +81,7 @@
         "DisplayName" = "8:Debug"
         "IsDebugOnly" = "11:TRUE"
         "IsReleaseOnly" = "11:FALSE"
-        "OutputFilename" = "8:Debug\\Setup_alpha.msi"
+        "OutputFilename" = "8:Debug\\SMUsetup.msi"
         "PackageFilesAs" = "3:2"
         "PackageFileSize" = "3:-2147483648"
         "CabType" = "3:1"
@@ -92,6 +98,14 @@
             "PrerequisitesLocation" = "2:1"
             "Url" = "8:"
             "ComponentsUrl" = "8:"
+                "Items"
+                {
+                    "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:.NETFramework,Version=v4.7.2"
+                    {
+                    "Name" = "8:Microsoft .NET Framework 4.7.2 (x86 and x64)"
+                    "ProductCode" = "8:.NETFramework,Version=v4.7.2"
+                    }
+                }
             }
         }
         "Release"
@@ -116,6 +130,14 @@
             "PrerequisitesLocation" = "2:1"
             "Url" = "8:"
             "ComponentsUrl" = "8:"
+                "Items"
+                {
+                    "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:.NETFramework,Version=v4.7.2"
+                    {
+                    "Name" = "8:Microsoft .NET Framework 4.7.2 (x86 and x64)"
+                    "ProductCode" = "8:.NETFramework,Version=v4.7.2"
+                    }
+                }
             }
         }
     }
@@ -208,6 +230,26 @@
             "IsDependency" = "11:TRUE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_A0D9858E6B594C478F83E982084474D6"
+            {
+            "SourcePath" = "8:..\\..\\..\\..\\Downloads\\appicon.ico"
+            "TargetName" = "8:appicon.ico"
+            "Tag" = "8:"
+            "Folder" = "8:_A8C28BB97E40403AAD087FC603035D20"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_DAEDBEA3D2F90A746448639BC7711DD3"
             {
             "AssemblyRegister" = "3:1"
@@ -296,7 +338,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:Potentiostat 1.0"
         "ProductCode" = "8:{D1FFB001-895E-4A3B-9C25-579C9235907E}"
-        "PackageCode" = "8:{F91FA78C-FCCB-427B-9337-847D0ED3718D}"
+        "PackageCode" = "8:{A9F53585-8AA2-4F9A-A91D-766A7951493C}"
         "UpgradeCode" = "8:{958731E1-6FFF-4380-B3EE-FD24FE6C0682}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
@@ -418,7 +460,7 @@
         {
             "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_9EBEE353B9BB41BFAC17FF7D081AD923"
             {
-            "Name" = "8:Potenciostato"
+            "Name" = "8:Potenciostat"
             "Arguments" = "8:"
             "Description" = "8:"
             "ShowCmd" = "3:1"
@@ -427,7 +469,7 @@
             "Target" = "8:_CAB4D836BDA841A09772DA8A59EE05A7"
             "Folder" = "8:_08190A69706141DBBE2A3BE66CCED82A"
             "WorkingFolder" = "8:_08190A69706141DBBE2A3BE66CCED82A"
-            "Icon" = "8:"
+            "Icon" = "8:_A0D9858E6B594C478F83E982084474D6"
             "Feature" = "8:"
             }
         }
@@ -831,7 +873,7 @@
         {
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_CAB4D836BDA841A09772DA8A59EE05A7"
             {
-            "SourcePath" = "8:..\\WPFPotenciostato\\obj\\Debug\\WPFPotenciostato.exe"
+            "SourcePath" = "8:..\\WPFPotenciostato\\obj\\Release\\WPFPotenciostato.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_A8C28BB97E40403AAD087FC603035D20"

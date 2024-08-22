@@ -22,6 +22,9 @@ using LiveCharts.Defaults;
 using System.IO;
 using LiveCharts.Wpf.Charts.Base;
 using System.Timers;
+using LiveChartsCore;
+using LiveChartsCore.Measure;
+using LiveChartsCore.SkiaSharpView;
 
 namespace WPFPotenciostato
 {
@@ -128,9 +131,18 @@ namespace WPFPotenciostato
         int VoltageArrayIndexOffset = 0;
         bool NotFirstData = false;
         float[] MeasuredCurrent;
+        float[] csvCurrent;
+
         public MainWindow()
         {
             InitializeComponent();
+
+            //var tooltip = new DefaultTooltip {
+            //    TooltipFindingStrategy.CompareAllTakeClosest, 
+            //    ShowSeries = false};
+
+            //Chart.DataTooltip = tooltip;
+
 
             string[] ports = SerialPort.GetPortNames();
 
@@ -214,16 +226,19 @@ namespace WPFPotenciostato
         private void LSVVoltagePointsArrayCalculator(float TimeStep, float InitialVoltage, float FinalVoltage, float VoltageStep)
         {
             VoltagePoints = "";
-            VoltageStep = VoltageStep * 0.001f;
-            int LSVVoltageStepbit = (int)(VoltageStep * 4095) / 5;
+            VoltageStep = (VoltageStep * 0.001f);
+            InitialVoltage = (InitialVoltage) + 2.5f;
+            FinalVoltage = (FinalVoltage) + 2.5f;
+
+            int LSVVoltageStepbit = (int)Math.Ceiling((VoltageStep * 4095) / 5);
             int LSVInitialVoltagebit = (int)(InitialVoltage * 4095) / 5;
             int LSVFinalVoltagebit = (int)(FinalVoltage * 4095) / 5;
             double Accumulator = InitialVoltage;
 
             for (float i = LSVInitialVoltagebit; i <= LSVFinalVoltagebit; i = i + LSVVoltageStepbit)
             {
-                Accumulator = Accumulator + VoltageStep;
-                VoltagePoints = VoltagePoints + "," + Accumulator.ToString();
+                //Accumulator = Accumulator + VoltageStep;
+                VoltagePoints = VoltagePoints + "," + ((i*5/4095)-2.5).ToString();
             }
             Console.WriteLine(LSVFinalVoltagebit);
             Console.WriteLine(VoltagePoints);
@@ -232,6 +247,7 @@ namespace WPFPotenciostato
             VoltagePointsFloat = ConvertStringToFloatArray(VoltagePoints);
             VoltagePointsFloat = VoltagePointsFloat.Skip(1).ToArray();
             VoltageArrayIndexOffset = 0;
+            csvCurrent = new float[VoltagePointsFloat.Length];
         }
 
         #region LSV Config Panel Design
@@ -408,6 +424,7 @@ namespace WPFPotenciostato
             }
             VoltagePointsFloat = ConvertStringToFloatArray(VoltagePoints);
             VoltageArrayIndexOffset = 0;
+            csvCurrent = new float[VoltagePointsFloat.Length];
         }
 
         #region CV Config Panel Design
@@ -589,6 +606,11 @@ namespace WPFPotenciostato
         #region Differential Pulse Voltammetry
         private void DPV_SendMeasureParameters(Object sender, RoutedEventArgs e)
         {
+            CurrentSeries.Clear();
+            if (ivSeries != null)
+            {
+                ivSeries.Values.Clear();
+            }
             if (!string.IsNullOrEmpty(DPV_PulseTime.Text) && !string.IsNullOrEmpty(DPV_VoltageStep.Text)
                 && !string.IsNullOrEmpty(DPV_InitialVoltage.Text) && !string.IsNullOrEmpty(DPV_FinalVoltage.Text) &&
                 !string.IsNullOrEmpty(DPV_PulseVoltage.Text) && !string.IsNullOrEmpty(DPV_LowTime.Text))
@@ -598,29 +620,40 @@ namespace WPFPotenciostato
                     float.Parse(DPV_FinalVoltage.Text), float.Parse(DPV_PulseVoltage.Text), float.Parse(DPV_LowTime.Text),
                     float.Parse(DPV_PulseTime.Text));
                 IsInMeasure = true;
-                _serialPort.Write("2" + DPV_PulseTime.Text + DPV_VoltageStep.Text + DPV_InitialVoltage.Text
-                    + DPV_FinalVoltage.Text + DPV_PulseVoltage.Text + DPV_LowTime.Text);
+                _serialPort.Write("2" + "," + DPV_PulseTime.Text + "," + DPV_VoltageStep.Text + "," + DPV_InitialVoltage.Text
+                    + "," + DPV_FinalVoltage.Text + "," + DPV_PulseVoltage.Text + "," + DPV_LowTime.Text);
             }
             else MessageBox.Show("Fill all the parameters to make the measure.", "Error");
         }
         private void DPVVoltagePointsArrayCalculator(float VoltageStep, float InitialVoltage, float FinalVoltage, 
             float PulseVoltage, float LowTime, float PulseTime)
         {
+            InitialVoltage = (InitialVoltage) + 2.5f;
+            FinalVoltage = (FinalVoltage) + 2.5f;
+
             PulseVoltage = PulseVoltage * 0.001f;
             VoltageStep = VoltageStep * 0.001f;
-            VoltagePoints = InitialVoltage.ToString();
+            int DPVVoltageStepbit = (int)Math.Ceiling((VoltageStep * 4095) / 5);
+            int DPVInitialVoltagebit = (int)(InitialVoltage * 4095) / 5;
+            int DPVFinalVoltagebit = (int)(FinalVoltage * 4095) / 5;
+            int DPVPulseVoltagebit = (int)(PulseVoltage * 4095) / 5;
+
+            VoltagePoints = ((DPVInitialVoltagebit*5/4095)-2.5).ToString();
             float lastVoltage = InitialVoltage;
 
-            while (lastVoltage < FinalVoltage)
+            while (lastVoltage < DPVFinalVoltagebit)
             {
-                lastVoltage = lastVoltage + PulseVoltage;
-                VoltagePoints = VoltagePoints + "," + lastVoltage.ToString();
-                lastVoltage = lastVoltage - VoltageStep;
-                VoltagePoints = VoltagePoints + "," + lastVoltage.ToString();
+                lastVoltage = lastVoltage + DPVPulseVoltagebit;
+                VoltagePoints = VoltagePoints + "," + ((lastVoltage * 5 / 4095) - 2.5).ToString();
+                lastVoltage = lastVoltage - DPVVoltageStepbit;
+                VoltagePoints = VoltagePoints + "," + ((lastVoltage * 5 / 4095) - 2.5).ToString();
             }
-            VoltagePoints = VoltagePoints + "," + FinalVoltage.ToString();
-            _serialPort.Write(VoltagePoints);
+            VoltagePoints = VoltagePoints + "," + (FinalVoltage-2.5).ToString();
+            Console.WriteLine("voltagepoints");
+            Console.Write(VoltagePoints);
             VoltagePointsFloat = ConvertStringToFloatArray(VoltagePoints);
+            VoltageArrayIndexOffset = 0;
+            csvCurrent = new float[VoltagePointsFloat.Length];
         }
 
         #region DPV Config Panel Design
@@ -802,6 +835,11 @@ namespace WPFPotenciostato
         #region Normal Pulse Voltammetry
         private void NPV_SendMeasureParameters(Object sender, RoutedEventArgs e)
         {
+            CurrentSeries.Clear();
+            if (ivSeries != null)
+            {
+                ivSeries.Values.Clear();
+            }
             if (!string.IsNullOrEmpty(NPV_PulseTime.Text) && !string.IsNullOrEmpty(NPV_VoltageStep.Text)
                 && !string.IsNullOrEmpty(NPV_InitialVoltage.Text) && !string.IsNullOrEmpty(NPV_FinalVoltage.Text) &&
                 !string.IsNullOrEmpty(NPV_LowTime.Text))
@@ -810,28 +848,36 @@ namespace WPFPotenciostato
                 NPVVoltagePointsArrayCalculator(float.Parse(NPV_VoltageStep.Text), float.Parse(NPV_InitialVoltage.Text),
                     float.Parse(NPV_FinalVoltage.Text), float.Parse(NPV_LowTime.Text), float.Parse(NPV_PulseTime.Text));
                 IsInMeasure = true;
-                _serialPort.Write("3" + NPV_PulseTime.Text + NPV_VoltageStep.Text + NPV_InitialVoltage.Text
-                    + NPV_FinalVoltage.Text + NPV_LowTime.Text);
+                _serialPort.Write("3" + "," +NPV_PulseTime.Text + "," + NPV_VoltageStep.Text + "," + NPV_InitialVoltage.Text
+                    + "," + NPV_FinalVoltage.Text + "," + NPV_LowTime.Text);
             }
             else MessageBox.Show("Fill all the parameters to make the measure.", "Error");
         }
         private void NPVVoltagePointsArrayCalculator(float VoltageStep, float InitialVoltage, float FinalVoltage,
             float LowTime, float PulseTime)
         {
-            VoltageStep = VoltageStep * 0.001f;
-            VoltagePoints = InitialVoltage.ToString();
-            float lastVoltage = InitialVoltage;
+            InitialVoltage = (InitialVoltage) + 2.5f;
+            FinalVoltage = (FinalVoltage) + 2.5f;
 
-            while (lastVoltage < FinalVoltage)
+            VoltageStep = VoltageStep * 0.001f;
+            VoltagePoints = (InitialVoltage - 2.5f).ToString();
+            int NPVVoltageStepbit = (int)Math.Ceiling((VoltageStep * 4095) / 5);
+            int NPVInitialVoltagebit = (int)(InitialVoltage * 4095) / 5;
+            int NPVFinalVoltagebit = (int)(FinalVoltage * 4095) / 5;
+
+            float lastVoltage = NPVInitialVoltagebit;
+
+            while (lastVoltage < NPVFinalVoltagebit)
             {
-                lastVoltage = lastVoltage + VoltageStep;
-                if (lastVoltage > FinalVoltage) break;
-                VoltagePoints = VoltagePoints + "," + lastVoltage.ToString();
-                VoltagePoints = VoltagePoints + "," + InitialVoltage.ToString();
+                lastVoltage = lastVoltage + NPVVoltageStepbit;
+                VoltagePoints = VoltagePoints + "," + ((lastVoltage * 5 / 4095) - 2.5).ToString();
+                VoltagePoints = VoltagePoints + "," + (InitialVoltage-2.5).ToString();
             }
             VoltagePoints = VoltagePoints + "," + FinalVoltage.ToString();
-            //_serialPort.Write(VoltagePoints);
+
             VoltagePointsFloat = ConvertStringToFloatArray(VoltagePoints);
+            VoltageArrayIndexOffset = 0;
+            csvCurrent = new float[VoltagePointsFloat.Length];
         }
 
         #region NPV Config Panel Design
@@ -1043,17 +1089,17 @@ namespace WPFPotenciostato
                 Console.WriteLine(MeasuredCurrent.Length);
                 Console.WriteLine(VoltagePointsFloat.Length);
 
-                /*for (int i = 0; i< MeasuredCurrent.Length; i++)
-                {
-                    Console.Write(MeasuredCurrent[i]);
-                    Console.Write(",");
-                }
-                Console.WriteLine("");
+                //for (int i = 0; i< MeasuredCurrent.Length; i++)
+                //{
+                //    Console.Write(MeasuredCurrent[i]);
+                //    Console.Write(",");
+                //}
+                //Console.WriteLine("");
                 for (int i = 0; i < VoltagePointsFloat.Length; i++)
                 {
                     Console.Write(VoltagePointsFloat[i]);
                     Console.Write(",");
-                }*/
+                }
 
                 Dispatcher.Invoke(() =>
                 {
@@ -1064,36 +1110,41 @@ namespace WPFPotenciostato
                             Title = "IV Curve",
                             Values = new ChartValues<ObservablePoint>(),
                             PointGeometry = DefaultGeometries.Circle,
-                            PointGeometrySize = 5
+                            PointGeometrySize = 5,
+                            Fill = System.Windows.Media.Brushes.Transparent
                         };
                     }
 
                     if (LogIsChecked)
                     {
-                        for (int i = 0; i < MeasuredCurrent.Length - 1; i++)
+                        for (int i = 0; i < MeasuredCurrent.Length; i++)
                         {
                             if (NotFirstData)
                             {
                                 ivSeries.Values.Add(new ObservablePoint(VoltagePointsFloat[VoltageArrayIndexOffset], Math.Log10(MeasuredCurrent[i])));
+                                csvCurrent[VoltageArrayIndexOffset] = MeasuredCurrent[i];
                             }
                             else
                             {
                                 ivSeries.Values.Add(new ObservablePoint(VoltagePointsFloat[i], Math.Log10(MeasuredCurrent[i])));
+                                csvCurrent[i] = MeasuredCurrent[i];
                             }
                             VoltageArrayIndexOffset++;
                         }
                     }
                     else
                     {
-                        for (int i = 0; i < MeasuredCurrent.Length - 1; i++)
+                        for (int i = 0; i < MeasuredCurrent.Length; i++)
                         {
                             if (NotFirstData)
                             {
                                 ivSeries.Values.Add(new ObservablePoint(VoltagePointsFloat[VoltageArrayIndexOffset], MeasuredCurrent[i]));
+                                csvCurrent[VoltageArrayIndexOffset] = MeasuredCurrent[i];
                             }
                             else
                             {
                                 ivSeries.Values.Add(new ObservablePoint(VoltagePointsFloat[i], MeasuredCurrent[i]));
+                                csvCurrent[i] = MeasuredCurrent[i];
                             }
                             VoltageArrayIndexOffset++;
                         }
@@ -1146,20 +1197,20 @@ namespace WPFPotenciostato
             StringBuilder csvContent = new StringBuilder();
             csvContent.AppendLine("current,voltage");
 
-            int rowCount = Math.Min(MeasuredCurrent.Length, VoltagePointsFloat.Length);
+            int rowCount = Math.Min(csvCurrent.Length, VoltagePointsFloat.Length);
 
             if (LogIsChecked)
             {
                 for (int i = 0; i < rowCount; i++)
                 {
-                    csvContent.AppendLine($"{Math.Log10(MeasuredCurrent[i])},{VoltagePointsFloat[i]}");
+                    csvContent.AppendLine($"{Math.Log10(csvCurrent[i])},{VoltagePointsFloat[i]}");
                 }
             }
             else
             {
                 for (int i = 0; i < rowCount; i++)
                 {
-                    csvContent.AppendLine($"{MeasuredCurrent[i]},{VoltagePointsFloat[i]}");
+                    csvContent.AppendLine($"{csvCurrent[i]},{VoltagePointsFloat[i]}");
                 }
             }
 
